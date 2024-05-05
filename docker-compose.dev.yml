@@ -7,6 +7,7 @@ services:
       INTERACTION_BETWEEN_MICROSERVICES: activemq
       EUREKA_URI: eureka
       REDIS_HOST: redisCache
+      ACTIVEMQ_URI: activemq
     depends_on:
       - redisCache
       - eureka
@@ -23,6 +24,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       EUREKA_URI: eureka
       REDIS_HOST: redisCache
+      ACTIVEMQ_URI: activemq
     depends_on:
       - postgresDB
       - redisCache
