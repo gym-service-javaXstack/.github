@@ -1,5 +1,5 @@
 # Before you get started, make sure you have the right project structure in place:
-![img_1.png](../img_1.png)
+![img_1.png](/img_1.png)
 1) U must have 4 modules:
    1) **eureka-server**
    2) **gateway-server**
@@ -23,5 +23,5 @@
     - user: **pgadmin4@pgadmin.org**
     - password: **postgres**
 7) Then use password to registry server:
-   ![img.png](../img.png)
+   ![img.png](/img.png)
 8) Prometheus works after deploying docker-compose at  **http://localhost:9090/**
