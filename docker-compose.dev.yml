@@ -1,0 +1,99 @@
+version: '3.8'
+services:
+  gym-report:
+    build: gym-report-service
+    image: gym-report
+    environment:
+      INTERACTION_BETWEEN_MICROSERVICES: activemq
+      EUREKA_URI: eureka
+      REDIS_HOST: redisCache
+    depends_on:
+      - redisCache
+      - eureka
+      - gateway
+    ports:
+      - "0:8084"
+
+  gym-main:
+    build: gym-main-service
+    image: gym-main
+    environment:
+      INTERACTION_BETWEEN_MICROSERVICES: activemq
+      DB_HOST: postgresDB
+      SPRING_PROFILES_ACTIVE: dev
+      EUREKA_URI: eureka
+      REDIS_HOST: redisCache
+    depends_on:
+      - postgresDB
+      - redisCache
+      - eureka
+      - gateway
+    ports:
+      - "0:8083"
+
+  activemq:
+    image: apache/activemq-artemis:latest
+    container_name: activemq
+    ports:
+      - "61616:61616" # BrokerPort
+      - "8161:8161"   # WebConsolePort
+    environment:
+      ARTEMIS_USER: activemq
+      ARTEMIS_PASSWORD: activemq
+
+  gateway:
+    build: gateway-server
+    image: gateway
+    environment:
+      EUREKA_URI: eureka
+    depends_on:
+      - eureka
+    ports:
+      - "8080:8080"
+
+  eureka:
+    build: eureka-server
+    image: eureka
+    ports:
+      - "8761:8761"
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+    ports:
+      - "9090:9090"
+    depends_on:
+      - gym-main
+
+  redisCache:
+    image: redis:latest
+    command: redis-server --requirepass "redis"
+    ports:
+      - "6379:6379"
+
+  postgresDB:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: gymDB-dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      -  postgres_data_dev:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: postgres
+    ports:
+      - "80:80"
+    depends_on:
+      - postgresDB
+
+volumes:
+  postgres_data_dev:
