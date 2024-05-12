@@ -8,10 +8,18 @@ services:
       EUREKA_URI: eureka
       REDIS_HOST: redisCache
       ACTIVEMQ_URI: activemq
+      NOSQL_TYPE: mongo
+      MONGODB_HOSTS: mongodb1:27017, mongodb2:27018
+      MONGODB_USER: mongodb
+      MONGODB_PASSWORD: mongodb
+      MONGODB_DATABASE: gym_db
+      MONGODB_RS: rs0
     depends_on:
       - redisCache
       - eureka
       - gateway
+      - mongodb1
+      - mongodb2
     ports:
       - "0:8084"
 
@@ -83,7 +91,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      -  postgres_data_dev:/var/lib/postgresql/data/
+      - postgres_data_dev:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
 
@@ -97,5 +105,48 @@ services:
     depends_on:
       - postgresDB
 
+  mongodb1:
+    container_name: mongodb1
+    image: mongo:latest
+    entrypoint: [ "bash", "mongo-entrypoint.sh" ]
+    command: [ "mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017", "--keyFile", "/etc/mongodb/pki/keyfile" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongodb
+      MONGO_INITDB_ROOT_PASSWORD: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo/keyfile:/etc/mongodb/pki/keyfile
+      - ./mongo/mongo-entrypoint.sh:/mongo-entrypoint.sh
+      - mongodb1_data:/data/db
+
+  mongodb2:
+    container_name: mongodb2
+    image: mongo:latest
+    entrypoint: [ "bash", "mongo-entrypoint.sh" ]
+    command: [ "mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27018", "--keyFile", "/etc/mongodb/pki/keyfile" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongodb
+      MONGO_INITDB_ROOT_PASSWORD: mongodb
+    ports:
+      - "27018:27018"
+    volumes:
+      - ./mongo/keyfile:/etc/mongodb/pki/keyfile
+      - ./mongo/mongo-entrypoint.sh:/mongo-entrypoint.sh
+      - mongodb2_data:/data/db
+
+  mongo-setup:
+    image: mongo:latest
+    container_name: mongo-setup
+    depends_on:
+      - mongodb1
+      - mongodb2
+    restart: on-failure
+    entrypoint: [ "bash", "/mongo-rs-init.sh" ]
+    volumes:
+      - ./mongo/mongo-rs-init.sh:/mongo-rs-init.sh
+
 volumes:
   postgres_data_dev:
+  mongodb1_data:
+  mongodb2_data:
